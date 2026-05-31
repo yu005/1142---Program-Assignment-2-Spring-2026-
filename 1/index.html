@@ -333,6 +333,7 @@
       <div class="sub">
         在時間、預算、體力與曝曬限制下，找出從入口廣場 V1 出發並回到 V1、可遊玩設施數最多的路線。
         本系統採用 <strong>DFS + Branch-and-Bound</strong> 進行路徑規劃，以互動式 Demo 完整展示演算法執行過程。
+        頂點權重包含遊玩時間、花費、體力與曝曬指數；邊權重包含移動時間與曝曬指數。
       </div>
       <div class="badge-row">
         <div class="badge">Depth-First Search</div>
@@ -355,8 +356,8 @@
         <div class="mini-title">評分順序</div>
         <div class="kv">
           <div><span>第一</span><span>最大化設施數</span></div>
-          <div><span>第二</span><span>最大化偏好分數</span></div>
-          <div><span>第三</span><span>最小化時間/花費/曝曬</span></div>
+          <div><span>第二</span><span>最小化總時間</span></div>
+          <div><span>第三</span><span>最小化花費/曝曬</span></div>
         </div>
       </div>
     </div>
@@ -384,7 +385,7 @@
         <h2>表 1：遊樂設施頂點權重</h2>
         <div class="data-table-wrap">
           <table class="data-table" id="vertexTable">
-            <thead><tr><th>節點</th><th>設施</th><th>Wt 時間</th><th>Wc 金額</th><th>We 體力</th><th>Wp 偏好</th></tr></thead>
+            <thead><tr><th>節點</th><th>設施</th><th>Wt 時間</th><th>Wc 金額</th><th>We 體力</th><th>Ws 曝曬</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -454,12 +455,12 @@
     <div class="section-label">Section 2-4</div>
     <div class="section-title">範例推導</div>
     <div class="section-desc">
-      以案例 1（時間 70、預算 300、體力 20、曝曬不限）為例，逐步展示 DFS + Branch-and-Bound 的搜尋過程。
+      以案例 1（時間 70、預算 300、體力 20、曝曬 15）為例，逐步展示 DFS + Branch-and-Bound 的搜尋過程。
     </div>
     <div class="card">
       <h2>搜尋樹視覺化</h2>
       <p class="note">下圖展示 DFS 從 V1 出發的關鍵分支。虛線表示被剪枝的分支，粗實線表示最終最佳路線。</p>
-      <svg id="treeSvg" class="tree-svg" viewBox="0 0 960 520" aria-label="DFS search tree derivation"></svg>
+      <svg id="treeSvg" class="tree-svg" viewBox="0 0 1040 520" aria-label="DFS search tree derivation"></svg>
     </div>
     <div class="card" style="margin-top:18px;">
       <h2>推導步驟詳解</h2>
@@ -579,7 +580,6 @@
           <h3>行程數據統計</h3>
           <div class="st-metrics">
             <div class="st-metric"><div class="lbl">遊玩設施數量</div><div class="val" id="stMetricCount"></div></div>
-            <div class="st-metric"><div class="lbl">總偏好分數</div><div class="val" id="stMetricPref"></div></div>
             <div class="st-metric"><div class="lbl">總花費時間</div><div class="val" id="stMetricTime"></div></div>
             <div class="st-metric"><div class="lbl">總花費金額</div><div class="val" id="stMetricCost"></div></div>
             <div class="st-metric"><div class="lbl">體力消耗</div><div class="val" id="stMetricEnergy"></div></div>
@@ -698,19 +698,19 @@
 // ─── Data ───
 const START = 'V1';
 const vertices = {
-  V1: { zh: '入口廣場', name: 'Entrance Plaza', play_time: 0, cost: 0, energy: 0, preference: 0, x: 150, y: 220 },
-  V2: { zh: '雲霄飛車', name: 'Roller Coaster', play_time: 15, cost: 150, energy: 8, preference: 9, x: 320, y: 100 },
-  V3: { zh: '摩天輪', name: 'Ferris Wheel', play_time: 20, cost: 100, energy: 2, preference: 6, x: 520, y: 160 },
-  V4: { zh: '鬼屋', name: 'Haunted House', play_time: 25, cost: 120, energy: 6, preference: 8, x: 320, y: 340 },
-  V5: { zh: '漂漂河', name: 'Lazy River', play_time: 30, cost: 80, energy: 4, preference: 7, x: 540, y: 370 },
-  V6: { zh: '旋轉木馬', name: 'Carousel', play_time: 10, cost: 50, energy: 1, preference: 5, x: 700, y: 230 },
+  V1: { zh: '入口廣場', name: 'Entrance Plaza', play_time: 0, cost: 0, energy: 0, sun_vertex: 2, x: 150, y: 220 },
+  V2: { zh: '雲霄飛車', name: 'Roller Coaster', play_time: 15, cost: 150, energy: 8, sun_vertex: 5, x: 320, y: 100 },
+  V3: { zh: '摩天輪', name: 'Ferris Wheel', play_time: 20, cost: 100, energy: 2, sun_vertex: 2, x: 520, y: 160 },
+  V4: { zh: '鬼屋', name: 'Haunted House', play_time: 25, cost: 120, energy: 6, sun_vertex: 0, x: 320, y: 340 },
+  V5: { zh: '漂漂河', name: 'Lazy River', play_time: 30, cost: 80, energy: 4, sun_vertex: 4, x: 540, y: 370 },
+  V6: { zh: '旋轉木馬', name: 'Carousel', play_time: 10, cost: 50, energy: 1, sun_vertex: 2, x: 700, y: 230 },
 };
 const edges = [
   ['V1','V2',5,2],['V1','V3',4,4],['V2','V3',6,1],['V2','V4',10,3],
   ['V3','V6',8,5],['V4','V5',5,2],['V5','V6',7,1],['V4','V6',12,4]
 ];
 const cases = {
-  1: { name: '案例 1', time_limit: 70, budget_limit: 300, energy_limit: 20, sun_limit: null },
+  1: { name: '案例 1', time_limit: 70, budget_limit: 300, energy_limit: 20, sun_limit: 15 },
   2: { name: '案例 2', time_limit: 90, budget_limit: 300, energy_limit: 20, sun_limit: 20 },
   3: { name: '案例 3', time_limit: 120, budget_limit: 450, energy_limit: 25, sun_limit: 25 },
 };
@@ -727,7 +727,7 @@ function edgeKey(a,b){ return [a,b].sort().join('-'); }
   const vBody = el('vertexTable').querySelector('tbody');
   for(const [id, v] of Object.entries(vertices)){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="mono">${id}</td><td>${v.zh}</td><td>${v.play_time}</td><td>${v.cost}</td><td>${v.energy}</td><td>${v.preference}</td>`;
+    tr.innerHTML = `<td class="mono">${id}</td><td>${v.zh}</td><td>${v.play_time}</td><td>${v.cost}</td><td>${v.energy}</td><td>${v.sun_vertex}</td>`;
     if(id === 'V1') tr.classList.add('highlight-row');
     vBody.appendChild(tr);
   }
@@ -790,7 +790,7 @@ function renderMapSvg(){
       tag.setAttribute('y', 50); tag.setAttribute('text-anchor','middle');
       tag.setAttribute('fill','#888'); tag.setAttribute('font-size','9.5'); tag.setAttribute('font-weight','500');
       tag.setAttribute('font-family',"'JetBrains Mono', monospace");
-      tag.textContent = `t${v.play_time} c${v.cost} e${v.energy} p${v.preference}`;
+      tag.textContent = `t${v.play_time} c${v.cost} e${v.energy} s${v.sun_vertex}`;
       g.appendChild(tag);
     }
     svg.appendChild(g);
@@ -802,7 +802,7 @@ renderMapSvg();
 function renderDataModel(){
   const svg = el('dataModelSvg');
   const boxes = [
-    { x: 60, y: 40, w: 200, h: 200, title: 'Vertex (頂點)', fields: ['id: String (V1~V6)','zh: String (中文名)','play_time: Int (分鐘)','cost: Int (元)','energy: Int (1~10)','preference: Int (分數)'] },
+    { x: 60, y: 40, w: 200, h: 200, title: 'Vertex (頂點)', fields: ['id: String (V1~V6)','zh: String (中文名)','play_time: Int (分鐘)','cost: Int (元)','energy: Int (1~10)','sun_vertex: Int (曝曬)'] },
     { x: 350, y: 40, w: 200, h: 160, title: 'Edge (邊)', fields: ['from: Vertex','to: Vertex','travel_time: Int','sun_exposure: Int (1~5)'] },
     { x: 640, y: 40, w: 200, h: 180, title: 'Constraint (限制)', fields: ['time_limit: Int','budget_limit: Int','energy_limit: Int','sun_limit: Int | null'] },
     { x: 350, y: 260, w: 200, h: 80, title: 'Solution (解)', fields: ['route: Vertex[]','selected: Vertex[]'] },
@@ -867,12 +867,12 @@ renderDataModel();
 (function(){
   el('codeDataStruct').innerHTML = `<span class="cm">// 頂點資料結構：每個頂點有多重權重</span>
 <span class="kw">const</span> vertices = {
-  V1: { zh: <span class="str">'入口廣場'</span>, play_time: <span class="num">0</span>,  cost: <span class="num">0</span>,   energy: <span class="num">0</span>, preference: <span class="num">0</span> },
-  V2: { zh: <span class="str">'雲霄飛車'</span>, play_time: <span class="num">15</span>, cost: <span class="num">150</span>, energy: <span class="num">8</span>, preference: <span class="num">9</span> },
-  V3: { zh: <span class="str">'摩天輪'</span>,   play_time: <span class="num">20</span>, cost: <span class="num">100</span>, energy: <span class="num">2</span>, preference: <span class="num">6</span> },
-  V4: { zh: <span class="str">'鬼屋'</span>,     play_time: <span class="num">25</span>, cost: <span class="num">120</span>, energy: <span class="num">6</span>, preference: <span class="num">8</span> },
-  V5: { zh: <span class="str">'漂漂河'</span>,   play_time: <span class="num">30</span>, cost: <span class="num">80</span>,  energy: <span class="num">4</span>, preference: <span class="num">7</span> },
-  V6: { zh: <span class="str">'旋轉木馬'</span>, play_time: <span class="num">10</span>, cost: <span class="num">50</span>,  energy: <span class="num">1</span>, preference: <span class="num">5</span> },
+  V1: { zh: <span class="str">'入口廣場'</span>, play_time: <span class="num">0</span>,  cost: <span class="num">0</span>,   energy: <span class="num">0</span>, sun_vertex: <span class="num">2</span> },
+  V2: { zh: <span class="str">'雲霄飛車'</span>, play_time: <span class="num">15</span>, cost: <span class="num">150</span>, energy: <span class="num">8</span>, sun_vertex: <span class="num">5</span> },
+  V3: { zh: <span class="str">'摩天輪'</span>,   play_time: <span class="num">20</span>, cost: <span class="num">100</span>, energy: <span class="num">2</span>, sun_vertex: <span class="num">2</span> },
+  V4: { zh: <span class="str">'鬼屋'</span>,     play_time: <span class="num">25</span>, cost: <span class="num">120</span>, energy: <span class="num">6</span>, sun_vertex: <span class="num">0</span> },
+  V5: { zh: <span class="str">'漂漂河'</span>,   play_time: <span class="num">30</span>, cost: <span class="num">80</span>,  energy: <span class="num">4</span>, sun_vertex: <span class="num">4</span> },
+  V6: { zh: <span class="str">'旋轉木馬'</span>, play_time: <span class="num">10</span>, cost: <span class="num">50</span>,  energy: <span class="num">1</span>, sun_vertex: <span class="num">2</span> },
 };
 
 <span class="cm">// 邊資料：[起點, 終點, 移動時間, 曝曬指數]</span>
@@ -931,37 +931,37 @@ renderDataModel();
 function renderSearchTree(){
   const svg = el('treeSvg');
   const nodes = [
-    { id: 'root', label: 'V1 起點', x: 480, y: 30, type: 'start', subLabel: 't:0, c:0' },
-    { id: 'v2', label: '遊玩 V2', x: 260, y: 120, type: 'expand', subLabel: 't:20, c:150, p:9' },
-    { id: 'v3', label: '遊玩 V3', x: 700, y: 120, type: 'expand', subLabel: 't:24, c:100, p:6' },
-    { id: 'v2_v3', label: '遊玩 V3', x: 80, y: 210, type: 'expand', subLabel: 't:50, c:250, p:15' },
-    { id: 'v2_v4', label: '遊玩 V4', x: 260, y: 210, type: 'expand', subLabel: 't:55, c:270, p:17' },
-    { id: 'v2_v1', label: '回 V1✓', x: 440, y: 210, type: 'cycle', subLabel: 't:25 (僅玩V2)' },
-    { id: 'v2_v4_v5', label: '遊玩 V5', x: 100, y: 310, type: 'expand', subLabel: 't:90 (超時)' },
-    { id: 'v2_v4_v6', label: '遊玩 V6', x: 260, y: 310, type: 'expand', subLabel: 't:77 (超時)' },
-    { id: 'v2_v4_v2b', label: '經 V2 回 V1✓', x: 460, y: 310, type: 'best', subLabel: 't:70, c:270, p:17' },
-    { id: 'v2_v4_v5_prune', label: '超時剪枝', x: 100, y: 370, type: 'pruned' },
-    { id: 'v2_v4_v6_prune', label: '界限/超時', x: 260, y: 370, type: 'pruned' },
-    { id: 'v3_v6', label: '遊玩 V6', x: 600, y: 210, type: 'expand', subLabel: 't:42, c:150, p:11' },
-    { id: 'v3_v2', label: '遊玩 V2', x: 700, y: 210, type: 'expand', subLabel: 't:45, c:250, p:15' },
-    { id: 'v3_v1', label: '回 V1✓', x: 820, y: 210, type: 'cycle', subLabel: 't:28 (僅玩V3)' },
-    { id: 'v3_v6_prune', label: '支配剪枝', x: 600, y: 270, type: 'pruned' },
-    { id: 'v3_v2_prune', label: '支配剪枝', x: 700, y: 270, type: 'pruned' },
+    { id: 'root', label: 'V1 起點', x: 500, y: 30, type: 'start', subLabel: 't:0, c:0, e:0, s:0' },
+    { id: 'v2', label: '遊玩 V2', x: 280, y: 130, type: 'expand', subLabel: 't:20, c:150, e:8, s:7' },
+    { id: 'v3', label: '遊玩 V3', x: 760, y: 130, type: 'expand', subLabel: 't:24, c:100, e:2, s:6' },
+    { id: 'v2_v3', label: '遊玩 V3', x: 80, y: 240, type: 'best', subLabel: 't:46, c:250, e:10, s:10' },
+    { id: 'v2_v4', label: '遊玩 V4', x: 300, y: 240, type: 'expand', subLabel: 't:55, c:270, e:14, s:10' },
+    { id: 'v2_v1', label: '回 V1✓', x: 520, y: 240, type: 'cycle', subLabel: 't:25 (僅玩V2)' },
+    { id: 'v2_v3_v1', label: '回 V1✓ ★', x: 80, y: 340, type: 'best', subLabel: 't:50, c:250, e:10, s:14' },
+    { id: 'v2_v4_v5', label: '遊玩 V5', x: 250, y: 340, type: 'expand', subLabel: 't:90 (超時)' },
+    { id: 'v2_v4_v6', label: '遊玩 V6', x: 410, y: 340, type: 'expand', subLabel: 't:77 (超時)' },
+    { id: 'v2_v4_v5_prune', label: '超時剪枝', x: 250, y: 400, type: 'pruned' },
+    { id: 'v2_v4_v6_prune', label: '界限/超時', x: 410, y: 400, type: 'pruned' },
+    { id: 'v3_v6', label: '遊玩 V6', x: 620, y: 240, type: 'expand', subLabel: 't:42, c:150, e:3, s:13' },
+    { id: 'v3_v2', label: '遊玩 V2', x: 780, y: 240, type: 'expand', subLabel: 't:45, c:250, e:10, s:12' },
+    { id: 'v3_v1', label: '回 V1✓', x: 940, y: 240, type: 'cycle', subLabel: 't:28 (僅玩V3)' },
+    { id: 'v3_v6_prune', label: '支配剪枝', x: 620, y: 300, type: 'pruned' },
+    { id: 'v3_v2_prune', label: '支配剪枝', x: 780, y: 300, type: 'pruned' },
   ];
   const treeEdges = [
-    { from: 'root', to: 'v2', type: 'normal', label: 'wt:5, Wt:15, Wc:150' },
-    { from: 'root', to: 'v3', type: 'normal', label: 'wt:4, Wt:20, Wc:100' },
-    { from: 'v2', to: 'v2_v3', type: 'normal', label: 'wt:6, Wt:20, Wc:100' },
-    { from: 'v2', to: 'v2_v4', type: 'normal', label: 'wt:10, Wt:25, Wc:120' },
-    { from: 'v2', to: 'v2_v1', type: 'normal', label: 'wt:5 (回程)' },
-    { from: 'v2_v4', to: 'v2_v4_v5', type: 'normal', label: 'wt:5, Wt:30' },
-    { from: 'v2_v4', to: 'v2_v4_v6', type: 'normal', label: 'wt:12, Wt:10' },
-    { from: 'v2_v4', to: 'v2_v4_v2b', type: 'best', label: 'wt:10(回V2) + wt:5(回V1)' },
+    { from: 'root', to: 'v2', type: 'normal', label: 'wt:5, ws:2\nWt:15, Wc:150, We:8, Ws:5' },
+    { from: 'root', to: 'v3', type: 'normal', label: 'wt:4, ws:4\nWt:20, Wc:100, We:2, Ws:2' },
+    { from: 'v2', to: 'v2_v3', type: 'best', label: 'wt:6, ws:1\nWt:20, Wc:100, We:2, Ws:2', offsetY: -15 },
+    { from: 'v2', to: 'v2_v4', type: 'normal', label: 'wt:10, ws:3\nWt:25, Wc:120, We:6, Ws:0', offsetY: 15 },
+    { from: 'v2', to: 'v2_v1', type: 'normal', label: 'wt:5, ws:2 (回程)', offsetY: -15 },
+    { from: 'v2_v3', to: 'v2_v3_v1', type: 'best', label: 'wt:4, ws:4 (回程)' },
+    { from: 'v2_v4', to: 'v2_v4_v5', type: 'normal', label: 'wt:5\nWt:30' },
+    { from: 'v2_v4', to: 'v2_v4_v6', type: 'normal', label: 'wt:12\nWt:10' },
     { from: 'v2_v4_v5', to: 'v2_v4_v5_prune', type: 'pruned' },
     { from: 'v2_v4_v6', to: 'v2_v4_v6_prune', type: 'pruned' },
-    { from: 'v3', to: 'v3_v6', type: 'normal', label: 'wt:8, Wt:10' },
-    { from: 'v3', to: 'v3_v2', type: 'normal', label: 'wt:6, Wt:15' },
-    { from: 'v3', to: 'v3_v1', type: 'normal', label: 'wt:4 (回程)' },
+    { from: 'v3', to: 'v3_v6', type: 'normal', label: 'wt:8, ws:5\nWt:10, Wc:50', offsetY: -10 },
+    { from: 'v3', to: 'v3_v2', type: 'normal', label: 'wt:6, ws:1\nWt:15, Wc:150', offsetY: 10 },
+    { from: 'v3', to: 'v3_v1', type: 'normal', label: 'wt:4, ws:4 (回程)', offsetY: -10 },
     { from: 'v3_v6', to: 'v3_v6_prune', type: 'pruned' },
     { from: 'v3_v2', to: 'v3_v2_prune', type: 'pruned' },
   ];
@@ -978,7 +978,7 @@ function renderSearchTree(){
     
     if(e.label){
       const mx = (from.x + to.x) / 2;
-      const my = (from.y + 16 + to.y - 16) / 2;
+      const my = ((from.y + 16 + to.y - 16) / 2) + (e.offsetY || 0);
       const t = document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x', mx);
       t.setAttribute('y', my);
@@ -991,7 +991,17 @@ function renderSearchTree(){
       t.setAttribute('stroke', '#fff');
       t.setAttribute('stroke-width', '4');
       t.setAttribute('paint-order', 'stroke');
-      t.textContent = e.label;
+      
+      const lines = e.label.split('\n');
+      lines.forEach((lineText, idx) => {
+        const tspan = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+        tspan.setAttribute('x', mx);
+        if (lines.length > 1) {
+          tspan.setAttribute('dy', idx === 0 ? '-0.4em' : '1.2em');
+        }
+        tspan.textContent = lineText;
+        t.appendChild(tspan);
+      });
       svg.appendChild(t);
     }
   }
@@ -1059,15 +1069,50 @@ renderSearchTree();
 // ─── Derivation Steps (Section 2-4) ───
 (function(){
   const steps = [
-    { num: '1', type: '', title: '狀態初始化：從 V1 出發', body: '系統將入口廣場 V1 設為起點。此時尚未遊玩任何設施。<br/>初始資源：時間=0, 花費=0, 體力=0, 偏好=0。<br/>依序嘗試相鄰邊，前往 V2 或 V3。優先走 V1→V2。' },
-    { num: '2', type: '', title: '展開分支：V1 → V2（選擇遊玩）', body: '經由邊 V1-V2 移動並決定遊玩 V2 (雲霄飛車)。<br/>• 移動耗時 (wt) = +5 分鐘<br/>• 遊玩耗時 (Wt) = +15 分鐘<br/>• 遊玩花費 (Wc) = +150 元<br/>• 體力消耗 (We) = +8<br/>• 獲得偏好 (Wp) = +9<br/>累積資源：時間 20 (5+15), 花費 150, 體力 8, 偏好 9。<br/>未超過限制 (時間≤70, 花費≤300, 體力≤20)，<span class="tag-inline tag-expand">✓ 狀態可行，繼續展開</span>' },
-    { num: '3', type: '', title: '展開分支：V2 → V4（選擇遊玩）', body: '經由邊 V2-V4 移動並決定遊玩 V4 (鬼屋)。<br/>• 移動耗時 (wt) = +10 分鐘<br/>• 遊玩耗時 (Wt) = +25 分鐘<br/>• 遊玩花費 (Wc) = +120 元<br/>• 體力消耗 (We) = +6<br/>• 獲得偏好 (Wp) = +8<br/>累積資源：時間 55 (20+10+25), 花費 270 (150+120), 體力 14 (8+6), 偏好 17 (9+8)。<br/>未超過限制，<span class="tag-inline tag-expand">✓ 狀態可行，繼續展開</span>' },
-    { num: '4', type: 'pruned', title: '嘗試延伸：V4 → V5（限制剪枝）', body: '若經由邊 V4-V5 移動並遊玩 V5 (漂漂河)：<br/>• 移動耗時 (wt) = +5 分鐘<br/>• 遊玩耗時 (Wt) = +30 分鐘<br/>累積時間 = 55 + 5 + 30 = 90 分鐘 > 時間上限 70 分鐘。<br/>發生超時，<span class="tag-inline tag-prune">✗ 限制剪枝</span>' },
-    { num: '5', type: 'pruned', title: '嘗試延伸：V4 → V6（上界剪枝）', body: '若經由邊 V4-V6 前往 V6 (旋轉木馬)，雖然目前資源允許，但 Branch-and-Bound 會估算樂觀上界：<br/>• 加入 V6 (Wp=5) 後，最多只能再玩 1 項設施，且回程所需移動時間將導致總時間超限。<br/>• 上界估算出的可能最佳結果，無法超越或等同於「找出更多設施」且「能合法回到起點」的要求。<br/><span class="tag-inline tag-prune">✗ 界限剪枝</span>' },
-    { num: '6', type: 'best', title: '產生回路：V4 → V2 → V1（更新最佳解）', body: '由於無法遊玩新設施，必須返回 V1。路線：V4 經 V2 回 V1。<br/>因為 V2 已遊玩，回程僅計算邊的移動時間 (wt)，不重複計算頂點權重 (Wt, Wc, We)。<br/>• V4→V2 移動 (wt) = +10 分鐘<br/>• V2→V1 移動 (wt) = +5 分鐘<br/>總時間 = 55 + 10 + 5 = 70 分鐘 (剛好符合限制)。<br/>找到可行解：設施數 2 項，偏好 17。<br/><span class="tag-inline tag-update">★ 更新目前最佳解</span>' },
-    { num: '7', type: '', title: '展開另側：V1 → V3（尋找更好解）', body: 'DFS 回溯到起點，改走另一側邊 V1-V3 並遊玩 V3 (摩天輪)。<br/>• 移動耗時 (wt) = +4 分鐘<br/>• 遊玩耗時 (Wt) = +20 分鐘<br/>• 遊玩花費 (Wc) = +100 元, 偏好 (Wp) = +6<br/>累積資源：時間 24, 花費 100, 體力 2, 偏好 6。' },
-    { num: '8', type: 'pruned', title: 'V3 側的分支探索（狀態支配）', body: '繼續從 V3 走到 V6 等設施時，系統會比對目前最佳解 (設施數: 2, 偏好: 17)。<br/>由於 V3 側的頂點偏好較低 (V3:6, V6:5，合計11 < 17)，加上後續連結的其他設施會使時間或預算超限。<br/>在分支過程中，狀態支配與上界估算機制會判定這些路徑無法超越最佳解。<br/><span class="tag-inline tag-prune">✗ 支配/界限剪枝</span>' },
-    { num: '9', type: 'best', title: '搜尋結束，輸出結果', body: '完整 DFS 狀態樹已走訪或剪枝完畢。<br/><strong>確認最佳路線</strong>：V1 → V2 → V4 → V2 → V1<br/><strong>最終累計權重</strong>：<br/>• 遊玩設施 = 2 項 (V2, V4)<br/>• 總耗時 (Σwt + ΣWt) = 70 分鐘<br/>• 總花費 (ΣWc) = 270 元<br/>• 總體力 (ΣWe) = 14<br/>• 總偏好 (ΣWp) = 17' },
+    { num: '1', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1<br/><strong>累積資源</strong>：設施 0 項 | 時間 0 | 花費 0 | 曝曬 0<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '2', type: '', title: '走訪：雲霄飛車(V2)', body: '<strong>路徑</strong>：V1 ➔ V2<br/><strong>累積資源</strong>：設施 1 項 | 時間 20 | 花費 150 | 曝曬 5<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '3', type: 'best', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V1<br/><strong>累積資源</strong>：設施 1 項 | 時間 25 | 花費 150 | 曝曬 5<br/><span class="tag-inline tag-update">🌟 找到更佳可行解！</span>' },
+    { num: '4', type: '', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3<br/><strong>累積資源</strong>：設施 2 項 | 時間 46 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '5', type: 'best', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 50 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-update">🌟 找到更佳可行解！</span>' },
+    { num: '6', type: '', title: '走訪：雲霄飛車(V2)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V2<br/><strong>累積資源</strong>：設施 2 項 | 時間 52 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '7', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V2 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 57 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '8', type: '', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V2 ➔ V3<br/><strong>累積資源</strong>：設施 2 項 | 時間 58 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '9', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V2 ➔ V3 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 62 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '10', type: 'pruned', title: '走訪：旋轉木馬(V6)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V2 ➔ V3 ➔ V6<br/><strong>累積資源</strong>：設施 3 項 | 時間 76 | 花費 300 | 曝曬 9<br/><span class="tag-inline tag-prune">資源超限 (時:76/70, 費:300/300, 體:11/20, 曬:9/15)</span>' },
+    { num: '11', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V2 ➔ V4<br/><strong>累積資源</strong>：設施 3 項 | 時間 87 | 花費 370 | 曝曬 7<br/><span class="tag-inline tag-prune">資源超限 (時:87/70, 費:370/300, 體:16/20, 曬:7/15)</span>' },
+    { num: '12', type: '', title: '走訪：旋轉木馬(V6)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V6<br/><strong>累積資源</strong>：設施 3 項 | 時間 64 | 花費 300 | 曝曬 9<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '13', type: 'pruned', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V6 ➔ V3<br/><strong>累積資源</strong>：設施 3 項 | 時間 72 | 花費 300 | 曝曬 9<br/><span class="tag-inline tag-prune">資源超限 (時:72/70, 費:300/300, 體:11/20, 曬:9/15)</span>' },
+    { num: '14', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V6 ➔ V4<br/><strong>累積資源</strong>：設施 4 項 | 時間 101 | 花費 420 | 曝曬 9<br/><span class="tag-inline tag-prune">資源超限 (時:101/70, 費:420/300, 體:17/20, 曬:9/15)</span>' },
+    { num: '15', type: 'pruned', title: '走訪：漂漂河(V5)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V3 ➔ V6 ➔ V5<br/><strong>累積資源</strong>：設施 4 項 | 時間 101 | 花費 380 | 曝曬 13<br/><span class="tag-inline tag-prune">資源超限 (時:101/70, 費:380/300, 體:15/20, 曬:13/15)</span>' },
+    { num: '16', type: '', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4<br/><strong>累積資源</strong>：設施 2 項 | 時間 55 | 花費 270 | 曝曬 5<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '17', type: '', title: '走訪：雲霄飛車(V2)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4 ➔ V2<br/><strong>累積資源</strong>：設施 2 項 | 時間 65 | 花費 270 | 曝曬 5<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '18', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4 ➔ V2 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 70 | 花費 270 | 曝曬 5<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '19', type: 'pruned', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4 ➔ V2 ➔ V3<br/><strong>累積資源</strong>：設施 3 項 | 時間 91 | 花費 370 | 曝曬 7<br/><span class="tag-inline tag-prune">資源超限 (時:91/70, 費:370/300, 體:16/20, 曬:7/15)</span>' },
+    { num: '20', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4 ➔ V2 ➔ V4<br/><strong>累積資源</strong>：設施 2 項 | 時間 75 | 花費 270 | 曝曬 5<br/><span class="tag-inline tag-prune">資源超限 (時:75/70, 費:270/300, 體:14/20, 曬:5/15)</span>' },
+    { num: '21', type: 'pruned', title: '走訪：漂漂河(V5)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4 ➔ V5<br/><strong>累積資源</strong>：設施 3 項 | 時間 90 | 花費 350 | 曝曬 9<br/><span class="tag-inline tag-prune">資源超限 (時:90/70, 費:350/300, 體:18/20, 曬:9/15)</span>' },
+    { num: '22', type: 'pruned', title: '走訪：旋轉木馬(V6)', body: '<strong>路徑</strong>：V1 ➔ V2 ➔ V4 ➔ V6<br/><strong>累積資源</strong>：設施 3 項 | 時間 77 | 花費 320 | 曝曬 7<br/><span class="tag-inline tag-prune">資源超限 (時:77/70, 費:320/300, 體:15/20, 曬:7/15)</span>' },
+    { num: '23', type: '', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V3<br/><strong>累積資源</strong>：設施 1 項 | 時間 24 | 花費 100 | 曝曬 2<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '24', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V1<br/><strong>累積資源</strong>：設施 1 項 | 時間 28 | 花費 100 | 曝曬 2<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '25', type: '', title: '走訪：雲霄飛車(V2)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2<br/><strong>累積資源</strong>：設施 2 項 | 時間 45 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '26', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 50 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '27', type: '', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3<br/><strong>累積資源</strong>：設施 2 項 | 時間 51 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '28', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 55 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '29', type: '', title: '走訪：雲霄飛車(V2)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V2<br/><strong>累積資源</strong>：設施 2 項 | 時間 57 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '30', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V2 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 62 | 花費 250 | 曝曬 7<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '31', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V2 ➔ V4<br/><strong>累積資源</strong>：設施 3 項 | 時間 92 | 花費 370 | 曝曬 7<br/><span class="tag-inline tag-prune">資源超限 (時:92/70, 費:370/300, 體:16/20, 曬:7/15)</span>' },
+    { num: '32', type: '', title: '走訪：旋轉木馬(V6)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V6<br/><strong>累積資源</strong>：設施 3 項 | 時間 69 | 花費 300 | 曝曬 9<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '33', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V6 ➔ V4<br/><strong>累積資源</strong>：設施 4 項 | 時間 106 | 花費 420 | 曝曬 9<br/><span class="tag-inline tag-prune">資源超限 (時:106/70, 費:420/300, 體:17/20, 曬:9/15)</span>' },
+    { num: '34', type: 'pruned', title: '走訪：漂漂河(V5)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V3 ➔ V6 ➔ V5<br/><strong>累積資源</strong>：設施 4 項 | 時間 106 | 花費 380 | 曝曬 13<br/><span class="tag-inline tag-prune">資源超限 (時:106/70, 費:380/300, 體:15/20, 曬:13/15)</span>' },
+    { num: '35', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V2 ➔ V4<br/><strong>累積資源</strong>：設施 3 項 | 時間 80 | 花費 370 | 曝曬 7<br/><span class="tag-inline tag-prune">資源超限 (時:80/70, 費:370/300, 體:16/20, 曬:7/15)</span>' },
+    { num: '36', type: '', title: '走訪：旋轉木馬(V6)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6<br/><strong>累積資源</strong>：設施 2 項 | 時間 42 | 花費 150 | 曝曬 4<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '37', type: '', title: '走訪：摩天輪(V3)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V3<br/><strong>累積資源</strong>：設施 2 項 | 時間 50 | 花費 150 | 曝曬 4<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '38', type: '', title: '走訪：入口廣場(V1)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V3 ➔ V1<br/><strong>累積資源</strong>：設施 2 項 | 時間 54 | 花費 150 | 曝曬 4<br/><span class="tag-inline tag-expand">完成環路 (未超越目前最佳解)</span>' },
+    { num: '39', type: 'pruned', title: '走訪：雲霄飛車(V2)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V3 ➔ V2<br/><strong>累積資源</strong>：設施 3 項 | 時間 71 | 花費 300 | 曝曬 9<br/><span class="tag-inline tag-prune">資源超限 (時:71/70, 費:300/300, 體:11/20, 曬:9/15)</span>' },
+    { num: '40', type: '', title: '走訪：旋轉木馬(V6)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V3 ➔ V6<br/><strong>累積資源</strong>：設施 2 項 | 時間 58 | 花費 150 | 曝曬 4<br/><span class="tag-inline tag-expand">繼續搜尋</span>' },
+    { num: '41', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V3 ➔ V6 ➔ V4<br/><strong>累積資源</strong>：設施 3 項 | 時間 95 | 花費 270 | 曝曬 4<br/><span class="tag-inline tag-prune">資源超限 (時:95/70, 費:270/300, 體:9/20, 曬:4/15)</span>' },
+    { num: '42', type: 'pruned', title: '走訪：漂漂河(V5)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V3 ➔ V6 ➔ V5<br/><strong>累積資源</strong>：設施 3 項 | 時間 95 | 花費 230 | 曝曬 8<br/><span class="tag-inline tag-prune">資源超限 (時:95/70, 費:230/300, 體:7/20, 曬:8/15)</span>' },
+    { num: '43', type: 'pruned', title: '走訪：鬼屋(V4)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V4<br/><strong>累積資源</strong>：設施 3 項 | 時間 79 | 花費 270 | 曝曬 4<br/><span class="tag-inline tag-prune">資源超限 (時:79/70, 費:270/300, 體:9/20, 曬:4/15)</span>' },
+    { num: '44', type: 'pruned', title: '走訪：漂漂河(V5)', body: '<strong>路徑</strong>：V1 ➔ V3 ➔ V6 ➔ V5<br/><strong>累積資源</strong>：設施 3 項 | 時間 79 | 花費 230 | 曝曬 8<br/><span class="tag-inline tag-prune">資源超限 (時:79/70, 費:230/300, 體:7/20, 曬:8/15)</span>' },
   ];
   const container = el('derivationSteps');
   steps.forEach(s => {
@@ -1113,14 +1158,12 @@ function upperBound(selected, play_time, travel_time, cost, energy, cfg) {
     if (cfg.energy_limit != null && energy + d.energy > cfg.energy_limit) continue;
     possible.add(v);
   }
-  let preference = 0;
-  possible.forEach(v => preference += vertices[v].preference);
-  return { count: possible.size, preference };
+  return { count: possible.size };
 }
 function better(candidate, incumbent) {
   if (!incumbent) return true;
-  const a = [candidate.attractions, candidate.preference, -candidate.total_time, -candidate.cost, -candidate.sun_exposure];
-  const b = [incumbent.attractions, incumbent.preference, -incumbent.total_time, -incumbent.cost, -incumbent.sun_exposure];
+  const a = [candidate.attractions, -candidate.total_time, -candidate.cost, -candidate.sun_exposure];
+  const b = [incumbent.attractions, -incumbent.total_time, -incumbent.cost, -incumbent.sun_exposure];
   for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) return a[i] > b[i]; }
   return false;
 }
@@ -1153,7 +1196,6 @@ function runSearch(cfg) {
         const candidate = {
           selected_order: [...selected], full_route: [...route],
           attractions: selected.length,
-          preference: selected.reduce((s, v) => s + vertices[v].preference, 0),
           play_time, travel_time, total_time: play_time + travel_time,
           cost, energy, sun_exposure: sun,
         };
@@ -1169,9 +1211,6 @@ function runSearch(cfg) {
     if (result.best) {
       if (bound.count < result.best.attractions) {
         log(`${pad}剪枝：上界設施數 ${bound.count} < 最佳 ${result.best.attractions}`, 'bad'); return;
-      }
-      if (bound.count === result.best.attractions && bound.preference <= result.best.preference) {
-        log(`${pad}剪枝：上界偏好 ${bound.preference} ≤ 最佳 ${result.best.preference}`, 'bad'); return;
       }
     }
     const key = `${current}|${[...selected].sort().join(',')}`;
@@ -1189,7 +1228,7 @@ function runSearch(cfg) {
       log(`${pad}展開 ${current} → ${nxt}`);
       if (nxt !== START && !selected.includes(nxt)) {
         const d = vertices[nxt];
-        dfs(nxt, newRoute, [...selected, nxt], play_time + d.play_time, newTravel, cost + d.cost, energy + d.energy, newSun, depth + 1);
+        dfs(nxt, newRoute, [...selected, nxt], play_time + d.play_time, newTravel, cost + d.cost, energy + d.energy, newSun + d.sun_vertex, depth + 1);
         log(`${pad}返回 ${nxt}，嘗試只經過不遊玩`, 'warn');
         dfs(nxt, newRoute, [...selected], play_time, newTravel, cost, energy, newSun, depth + 1);
       } else {
@@ -1258,7 +1297,7 @@ function updateSummary(result, cfg) {
   el('statAttractions').textContent = result.best.attractions;
   el('statSelected').textContent = result.best.selected_order.map(v => `${v} ${vertices[v].zh}`).join('，');
   el('statTime').textContent = `${result.best.total_time} 分鐘`;
-  el('statCost').textContent = `花費 ${result.best.cost} 元，偏好 ${result.best.preference}`;
+  el('statCost').textContent = `花費 ${result.best.cost} 元`;
   el('statEnergy').textContent = `體力 ${result.best.energy}`;
   el('statSun').textContent = `曝曬 ${result.best.sun_exposure}`;
   el('statVisited').textContent = `${result.visited_states} states`;
@@ -1329,7 +1368,7 @@ function resetDemo() {
         <div><span>時間上限</span><span>${cfg.time_limit} 分鐘</span></div>
         <div><span>預算上限</span><span>${cfg.budget_limit} 元</span></div>
         <div><span>體力上限</span><span>${cfg.energy_limit}</span></div>
-        <div><span>曝曬上限</span><span>${cfg.sun_limit ?? '不限'}</span></div>
+        <div><span>曝曬上限</span><span>${cfg.sun_limit ?? '15'}</span></div>
         <div style="border-top:1px solid var(--line);padding-top:8px;margin-top:6px"><span>最佳路線</span><span style="font-family:var(--mono);font-size:12px">${b ? b.full_route.join('→') : '無'}</span></div>
         <div><span>遊玩設施</span><span>${b ? b.attractions + ' 項' : '-'}</span></div>
         <div><span>遊玩設施名</span><span style="font-size:12px">${b ? b.selected_order.map(v=>vertices[v].zh).join('、') : '-'}</span></div>
@@ -1337,7 +1376,6 @@ function resetDemo() {
         <div><span>總花費</span><span>${b ? b.cost + ' 元' : '-'}</span></div>
         <div><span>體力消耗</span><span>${b ? b.energy : '-'}</span></div>
         <div><span>曝曬指數</span><span>${b ? b.sun_exposure : '-'}</span></div>
-        <div><span>偏好分數</span><span>${b ? b.preference : '-'}</span></div>
         <div><span>DFS 狀態數</span><span>${r.visited_states}</span></div>
         <div><span>可行回路數</span><span>${r.feasible_cycles}</span></div>
       </div>`;
@@ -1354,7 +1392,6 @@ function resetDemo() {
     ['總花費 (元)', b1?.cost, b2?.cost, b3?.cost],
     ['體力消耗', b1?.energy, b2?.energy, b3?.energy],
     ['曝曬指數', b1?.sun_exposure, b2?.sun_exposure, b3?.sun_exposure],
-    ['偏好分數', b1?.preference, b2?.preference, b3?.preference],
     ['DFS 狀態數', results[1].visited_states, results[2].visited_states, results[3].visited_states],
     ['檢查回路數', results[1].checked_cycles, results[2].checked_cycles, results[3].checked_cycles],
     ['可行回路數', results[1].feasible_cycles, results[2].feasible_cycles, results[3].feasible_cycles],
@@ -1386,6 +1423,7 @@ function resetDemo() {
         cumPlay += vertices[to].play_time;
         cumCost += vertices[to].cost;
         cumEnergy += vertices[to].energy;
+        cumSun += vertices[to].sun_vertex;
       } else if(to === START){
         action = '回到入口';
       } else {
@@ -1401,7 +1439,7 @@ function resetDemo() {
         手算總時間 = 移動 ${cumTravel} + 遊玩 ${cumPlay} = <strong>${cumTravel+cumPlay} 分鐘</strong>（≤ 70 ✓）<br/>
         手算總花費 = <strong>${cumCost} 元</strong>（≤ 300 ✓）<br/>
         手算體力 = <strong>${cumEnergy}</strong>（≤ 20 ✓）<br/>
-        手算偏好 = ${best.selected_order.map(v=>vertices[v].preference).join('+')} = <strong>${best.preference}</strong><br/>
+        手算總曝曬 = <strong>${cumSun}</strong><br/>
         程式輸出與手算結果一致，驗證通過。
       </span>
     </div>`;
@@ -1442,7 +1480,6 @@ el('stRunBtn').addEventListener('click', () => {
     const routeStr = result.best.full_route.map(v => `**${vertices[v].zh} (${v})**`).join(' ➔ ');
     el('stRouteText').innerHTML = routeStr.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     el('stMetricCount').textContent = result.best.attractions + ' 個';
-    el('stMetricPref').textContent = result.best.preference + ' 分';
     el('stMetricTime').textContent = result.best.total_time + ' 分鐘';
     el('stMetricCost').textContent = result.best.cost + ' 元';
     el('stMetricEnergy').textContent = result.best.energy + ' / ' + cfg.energy_limit;
