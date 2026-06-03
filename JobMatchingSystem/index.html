@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學生宿舍最佳配對系統</title>
-    <meta name="description" content="學生宿舍最佳配對資訊系統 — 支援雙人房、三人房、四人房">
+    <meta name="description" content="學生宿舍最佳配對資訊系統">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -20,8 +20,8 @@
             </div>
             <div class="matrix-panel" id="matrixPanel" style="display:none;">
                 <div class="matrix-header">
-                    <h3>📊 自動計算的偏好分數矩陣</h3>
-                    <span class="matrix-hint">分數根據學生偏好與房間屬性自動產生（0-100）</span>
+                    <h3>📊 偏好分數矩陣</h3>
+                    <span class="matrix-hint">分數根據學生偏好自動產生（可點擊修改）</span>
                 </div>
                 <div class="matrix-wrapper" id="matrixWrapper"></div>
             </div>
@@ -43,40 +43,29 @@
             <!-- 房間設定 -->
             <div class="control-section">
                 <h2>🏢 房間設定</h2>
-                <div class="room-setup">
-                    <div class="input-row-3">
-                        <div class="input-group"><label>雙人房</label><input type="number" id="numDouble" class="text-input" min="0" max="5" value="2"></div>
-                        <div class="input-group"><label>三人房</label><input type="number" id="numTriple" class="text-input" min="0" max="5" value="1"></div>
-                        <div class="input-group"><label>四人房</label><input type="number" id="numQuad" class="text-input" min="0" max="5" value="1"></div>
-                    </div>
-                    <div class="input-row">
-                        <div class="input-group"><label>起始樓層</label><input type="number" id="startFloor" class="text-input" min="1" max="9" value="2"></div>
-                        <div class="input-group"><label>起始房號</label><input type="number" id="startRoom" class="text-input" min="1" max="20" value="1"></div>
-                    </div>
-                    <div class="btn-row">
-                        <button class="action-btn" id="btnGenRooms">🏠 生成房間</button>
-                        <button class="action-btn" id="btnExample1">📄 範例1</button>
-                        <button class="action-btn" id="btnExample2">📄 範例2</button>
-                    </div>
+                <div class="input-row-3">
+                    <div class="input-group"><label>雙人房</label><input type="number" id="numDouble" class="text-input" min="0" max="3" value="1"></div>
+                    <div class="input-group"><label>三人房</label><input type="number" id="numTriple" class="text-input" min="0" max="2" value="1"></div>
+                    <div class="input-group"><label>四人房</label><input type="number" id="numQuad" class="text-input" min="0" max="2" value="0"></div>
+                </div>
+                <div class="btn-row">
+                    <button class="action-btn" id="btnGenerate">🏠 生成</button>
+                    <button class="action-btn" id="btnExample1">📄 範例1</button>
+                    <button class="action-btn" id="btnExample2">📄 範例2</button>
                 </div>
                 <div class="room-list" id="roomList"></div>
                 <div class="map-stats">
                     <div class="stat-chip"><span class="stat-chip-label">房間</span><span class="stat-chip-value" id="statRooms">0</span></div>
                     <div class="stat-chip"><span class="stat-chip-label">總床位</span><span class="stat-chip-value" id="statBeds">0</span></div>
+                    <div class="stat-chip"><span class="stat-chip-label">學生</span><span class="stat-chip-value" id="statStudents">0</span></div>
                 </div>
             </div>
 
             <!-- 學生偏好 -->
             <div class="control-section">
-                <h2>👤 學生偏好設定</h2>
-                <div class="input-row">
-                    <div class="input-group"><label>學生人數</label><input type="number" id="numStudents" class="text-input" min="1" max="20" value="8"></div>
-                    <button class="action-btn" id="btnGenStudents" style="align-self:flex-end;margin-bottom:1px;">👥 生成學生</button>
-                </div>
+                <h2>👤 學生偏好</h2>
+                <p class="section-hint">每位學生選擇偏好的房間類型</p>
                 <div class="student-list" id="studentList"></div>
-                <div class="map-stats">
-                    <div class="stat-chip"><span class="stat-chip-label">學生</span><span class="stat-chip-value" id="statStudents">0</span></div>
-                </div>
             </div>
 
             <!-- 演算法 -->
@@ -90,7 +79,6 @@
             </div>
 
             <div class="action-section">
-                <button id="btnCalcScore" class="score-btn">📊 計算偏好分數</button>
                 <button id="btnMatch" class="primary-btn">🎯 執行配對</button>
                 <button id="btnCompare" class="compare-btn">📊 三算法比較</button>
                 <button id="btnClear" class="secondary-btn">🗑️ 清除結果</button>
@@ -116,10 +104,7 @@
             <div class="result-section" id="compareSection" style="display:none;">
                 <h2>📊 三算法比較</h2>
                 <div class="compare-table-wrapper">
-                    <table class="compare-table" id="compareTable">
-                        <thead><tr><th>項目</th><th>B&B</th><th>貪婪</th><th>DP</th></tr></thead>
-                        <tbody id="compareBody"></tbody>
-                    </table>
+                    <table class="compare-table"><thead><tr><th>項目</th><th>B&B</th><th>貪婪</th><th>DP</th></tr></thead><tbody id="compareBody"></tbody></table>
                 </div>
             </div>
         </aside>

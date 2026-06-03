@@ -97,6 +97,11 @@ table.score-matrix td.highlight-cell { background: var(--green-light); font-weig
 .student-card .student-name { font-weight: 700; color: var(--amber); min-width: 32px; }
 .student-card select { font-size: 0.7rem; padding: 2px 3px; border: 1px solid var(--border-color); border-radius: 3px; background: white; max-width: 68px; }
 .student-card label { color: var(--text-muted); font-size: 0.68rem; margin-right: 1px; }
+.section-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: -4px; }
+table.score-matrix td input { width: 42px; text-align: center; border: 1px solid transparent; background: transparent; font-size: 0.78rem; font-family: var(--font); padding: 2px; border-radius: 3px; outline: none; }
+table.score-matrix td input:hover { border-color: var(--border-color); }
+table.score-matrix td input:focus { border-color: var(--accent); background: white; }
+table.score-matrix td.highlight-cell input { color: var(--green); font-weight: 700; }
 
 /* Radio */
 .algo-options { display: flex; flex-direction: column; gap: 5px; }
