@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>求職媒合最佳配對系統</title>
+    <meta name="description" content="人員指派問題求職媒合最佳配對資訊系統">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 主視覺區 -->
+        <main class="canvas-container">
+            <canvas id="matchCanvas"></canvas>
+            <div class="canvas-title">
+                <h2>配對視覺化</h2>
+                <span class="canvas-subtitle" id="canvasSubtitle">建立資料後將在此顯示二部圖配對結果</span>
+            </div>
+
+            <!-- 適配分數矩陣 -->
+            <div class="matrix-panel" id="matrixPanel">
+                <div class="matrix-header">
+                    <h3>📊 適配分數矩陣</h3>
+                    <span class="matrix-hint">點擊儲存格可直接編輯分數 (0-100)</span>
+                </div>
+                <div class="matrix-wrapper" id="matrixWrapper"></div>
+            </div>
+
+            <!-- 演算法執行資訊 -->
+            <div class="algo-info" id="algoInfo" style="display:none;">
+                <h3 id="algoInfoTitle">演算法執行資訊</h3>
+                <div id="algoInfoContent"></div>
+            </div>
+        </main>
+
+        <!-- 側邊面板 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <h1>求職媒合系統</h1>
+                </div>
+                <p class="subtitle">人員指派最佳配對資訊系統</p>
+            </div>
+
+            <!-- 資料設定 -->
+            <div class="control-section">
+                <h2>📊 資料設定</h2>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="applicantCount">求職者人數 (n)</label>
+                        <input type="number" id="applicantCount" class="text-input" min="2" max="10" value="4">
+                    </div>
+                    <div class="input-group">
+                        <label for="jobCount">職缺數量 (m)</label>
+                        <input type="number" id="jobCount" class="text-input" min="2" max="10" value="4">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="action-btn" id="btnGenerate">🎲 隨機生成</button>
+                    <button class="action-btn" id="btnExample1">📄 範例1 (4×4)</button>
+                    <button class="action-btn" id="btnExample2">📄 範例2 (5×5)</button>
+                </div>
+                <div class="map-stats">
+                    <div class="stat-chip"><span class="stat-chip-label">求職者</span><span class="stat-chip-value" id="statApplicants">0</span></div>
+                    <div class="stat-chip"><span class="stat-chip-label">職缺</span><span class="stat-chip-value" id="statJobs">0</span></div>
+                </div>
+            </div>
+
+            <!-- 演算法選擇 -->
+            <div class="control-section">
+                <h2>⚙️ 演算法選擇</h2>
+                <div class="algo-options">
+                    <label class="radio-label"><input type="radio" name="algo" value="bnb" checked><span class="radio-dot"></span><span>分支定界法 (B&B) — 最佳解</span></label>
+                    <label class="radio-label"><input type="radio" name="algo" value="greedy"><span class="radio-dot"></span><span>貪婪演算法 — 快速近似</span></label>
+                    <label class="radio-label"><input type="radio" name="algo" value="dp"><span class="radio-dot"></span><span>動態規劃 (DP) — 精確解</span></label>
+                </div>
+            </div>
+
+            <!-- 執行 -->
+            <div class="action-section">
+                <button id="btnMatch" class="primary-btn">🎯 執行配對</button>
+                <button id="btnCompare" class="compare-btn">📊 三算法比較</button>
+                <button id="btnClear" class="secondary-btn">🗑️ 清除結果</button>
+            </div>
+
+            <!-- 結果 -->
+            <div class="result-section" id="resultSection" style="display:none;">
+                <h2>📋 配對結果</h2>
+                <div class="result-card">
+                    <div class="result-stat"><span class="stat-label">使用演算法：</span><span class="stat-value-small" id="resAlgo">-</span></div>
+                    <div class="result-stat"><span class="stat-label">總適配分數：</span><span class="stat-value" id="resTotalScore">-</span></div>
+                    <div class="result-stat"><span class="stat-label">搜尋節點數：</span><span class="stat-value-small" id="resNodes">-</span></div>
+                    <div class="result-stat"><span class="stat-label">修剪次數：</span><span class="stat-value-small" id="resPrune">-</span></div>
+                    <div class="result-stat"><span class="stat-label">計算時間：</span><span class="stat-value-small" id="resTime">-</span></div>
+                    <hr class="result-divider">
+                    <div class="result-stat"><span class="stat-label">配對明細：</span></div>
+                    <div class="match-details" id="matchDetails"></div>
+                    <hr class="result-divider">
+                    <div class="result-stat"><span class="stat-label">穩定性檢測：</span><span class="stat-value-small" id="resStability">-</span></div>
+                    <div class="blocking-pairs" id="blockingPairs"></div>
+                </div>
+            </div>
+
+            <!-- 比較結果 -->
+            <div class="result-section" id="compareSection" style="display:none;">
+                <h2>📊 三算法比較</h2>
+                <div class="compare-table-wrapper">
+                    <table class="compare-table" id="compareTable">
+                        <thead><tr><th>項目</th><th>B&B</th><th>貪婪</th><th>DP</th></tr></thead>
+                        <tbody id="compareBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
