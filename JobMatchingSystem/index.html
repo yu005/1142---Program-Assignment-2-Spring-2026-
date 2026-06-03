@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學生宿舍最佳配對系統</title>
-    <meta name="description" content="人員指派問題 — 學生宿舍最佳配對資訊系統">
+    <meta name="description" content="學生宿舍最佳配對資訊系統 — 支援雙人房、三人房、四人房">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -12,31 +12,25 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- 主視覺區 -->
         <main class="canvas-container">
             <canvas id="matchCanvas"></canvas>
             <div class="canvas-title">
                 <h2>配對視覺化</h2>
-                <span class="canvas-subtitle" id="canvasSubtitle">建立資料後將在此顯示二部圖配對結果</span>
+                <span class="canvas-subtitle" id="canvasSubtitle">設定房間與學生後，將在此顯示配對結果</span>
             </div>
-
-            <!-- 偏好分數矩陣 -->
-            <div class="matrix-panel" id="matrixPanel">
+            <div class="matrix-panel" id="matrixPanel" style="display:none;">
                 <div class="matrix-header">
-                    <h3>📊 偏好分數矩陣</h3>
-                    <span class="matrix-hint">點擊儲存格可直接編輯分數 (0-100)</span>
+                    <h3>📊 自動計算的偏好分數矩陣</h3>
+                    <span class="matrix-hint">分數根據學生偏好與房間屬性自動產生（0-100）</span>
                 </div>
                 <div class="matrix-wrapper" id="matrixWrapper"></div>
             </div>
-
-            <!-- 演算法執行資訊 -->
             <div class="algo-info" id="algoInfo" style="display:none;">
                 <h3 id="algoInfoTitle">演算法執行資訊</h3>
                 <div id="algoInfoContent"></div>
             </div>
         </main>
 
-        <!-- 側邊面板 -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -46,31 +40,46 @@
                 <p class="subtitle">學生宿舍最佳配對資訊系統</p>
             </div>
 
-            <!-- 資料設定 -->
+            <!-- 房間設定 -->
             <div class="control-section">
-                <h2>📊 資料設定</h2>
-                <div class="input-row">
-                    <div class="input-group">
-                        <label for="applicantCount">學生人數 (n)</label>
-                        <input type="number" id="applicantCount" class="text-input" min="2" max="10" value="4">
+                <h2>🏢 房間設定</h2>
+                <div class="room-setup">
+                    <div class="input-row-3">
+                        <div class="input-group"><label>雙人房</label><input type="number" id="numDouble" class="text-input" min="0" max="5" value="2"></div>
+                        <div class="input-group"><label>三人房</label><input type="number" id="numTriple" class="text-input" min="0" max="5" value="1"></div>
+                        <div class="input-group"><label>四人房</label><input type="number" id="numQuad" class="text-input" min="0" max="5" value="1"></div>
                     </div>
-                    <div class="input-group">
-                        <label for="jobCount">房間數量 (m)</label>
-                        <input type="number" id="jobCount" class="text-input" min="2" max="10" value="4">
+                    <div class="input-row">
+                        <div class="input-group"><label>起始樓層</label><input type="number" id="startFloor" class="text-input" min="1" max="9" value="2"></div>
+                        <div class="input-group"><label>起始房號</label><input type="number" id="startRoom" class="text-input" min="1" max="20" value="1"></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="action-btn" id="btnGenRooms">🏠 生成房間</button>
+                        <button class="action-btn" id="btnExample1">📄 範例1</button>
+                        <button class="action-btn" id="btnExample2">📄 範例2</button>
                     </div>
                 </div>
-                <div class="btn-row">
-                    <button class="action-btn" id="btnGenerate">🎲 隨機生成</button>
-                    <button class="action-btn" id="btnExample1">📄 範例1 (4×4)</button>
-                    <button class="action-btn" id="btnExample2">📄 範例2 (5×5)</button>
-                </div>
+                <div class="room-list" id="roomList"></div>
                 <div class="map-stats">
-                    <div class="stat-chip"><span class="stat-chip-label">學生</span><span class="stat-chip-value" id="statApplicants">0</span></div>
-                    <div class="stat-chip"><span class="stat-chip-label">房間</span><span class="stat-chip-value" id="statJobs">0</span></div>
+                    <div class="stat-chip"><span class="stat-chip-label">房間</span><span class="stat-chip-value" id="statRooms">0</span></div>
+                    <div class="stat-chip"><span class="stat-chip-label">總床位</span><span class="stat-chip-value" id="statBeds">0</span></div>
                 </div>
             </div>
 
-            <!-- 演算法選擇 -->
+            <!-- 學生偏好 -->
+            <div class="control-section">
+                <h2>👤 學生偏好設定</h2>
+                <div class="input-row">
+                    <div class="input-group"><label>學生人數</label><input type="number" id="numStudents" class="text-input" min="1" max="20" value="8"></div>
+                    <button class="action-btn" id="btnGenStudents" style="align-self:flex-end;margin-bottom:1px;">👥 生成學生</button>
+                </div>
+                <div class="student-list" id="studentList"></div>
+                <div class="map-stats">
+                    <div class="stat-chip"><span class="stat-chip-label">學生</span><span class="stat-chip-value" id="statStudents">0</span></div>
+                </div>
+            </div>
+
+            <!-- 演算法 -->
             <div class="control-section">
                 <h2>⚙️ 演算法選擇</h2>
                 <div class="algo-options">
@@ -80,14 +89,13 @@
                 </div>
             </div>
 
-            <!-- 執行 -->
             <div class="action-section">
+                <button id="btnCalcScore" class="score-btn">📊 計算偏好分數</button>
                 <button id="btnMatch" class="primary-btn">🎯 執行配對</button>
                 <button id="btnCompare" class="compare-btn">📊 三算法比較</button>
                 <button id="btnClear" class="secondary-btn">🗑️ 清除結果</button>
             </div>
 
-            <!-- 結果 -->
             <div class="result-section" id="resultSection" style="display:none;">
                 <h2>📋 配對結果</h2>
                 <div class="result-card">
@@ -97,7 +105,7 @@
                     <div class="result-stat"><span class="stat-label">修剪次數：</span><span class="stat-value-small" id="resPrune">-</span></div>
                     <div class="result-stat"><span class="stat-label">計算時間：</span><span class="stat-value-small" id="resTime">-</span></div>
                     <hr class="result-divider">
-                    <div class="result-stat"><span class="stat-label">配對明細：</span></div>
+                    <div class="result-stat"><span class="stat-label">分配明細：</span></div>
                     <div class="match-details" id="matchDetails"></div>
                     <hr class="result-divider">
                     <div class="result-stat"><span class="stat-label">穩定性檢測：</span><span class="stat-value-small" id="resStability">-</span></div>
@@ -105,7 +113,6 @@
                 </div>
             </div>
 
-            <!-- 比較結果 -->
             <div class="result-section" id="compareSection" style="display:none;">
                 <h2>📊 三算法比較</h2>
                 <div class="compare-table-wrapper">
