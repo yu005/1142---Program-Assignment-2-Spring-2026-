@@ -1,11 +1,14 @@
 // =====================================================
-// 求職媒合最佳配對系統
+// 學生宿舍最佳配對系統
 // 演算法：分支定界法 / 貪婪法 / 動態規劃
 // =====================================================
 
 let n = 0, m = 0;
 let scoreMatrix = [];
 let currentResult = null;
+
+const roomLabels = i => `${101 + i}`;
+const studentLabels = i => String.fromCharCode(65 + i);
 
 // DOM
 const canvas = document.getElementById('matchCanvas');
@@ -58,7 +61,7 @@ function generateRandom() {
     scoreMatrix = [];
     for (let i = 0; i < n; i++) {
         const row = [];
-        for (let j = 0; j < m; j++) row.push(Math.floor(Math.random() * 81) + 20); // 20-100
+        for (let j = 0; j < m; j++) row.push(Math.floor(Math.random() * 81) + 20);
         scoreMatrix.push(row);
     }
     refreshUI();
@@ -95,17 +98,17 @@ function refreshUI() {
     clearResults();
     renderMatrix();
     drawBipartite();
-    canvasSubtitle.textContent = `已載入 ${n} 位求職者 × ${m} 個職缺`;
+    canvasSubtitle.textContent = `已載入 ${n} 位學生 × ${m} 間房間`;
 }
 
 function renderMatrix() {
-    const applicantNames = Array.from({length: n}, (_, i) => `求職者 ${String.fromCharCode(65 + i)}`);
-    const jobNames = Array.from({length: m}, (_, j) => `職缺 ${j + 1}`);
+    const sNames = Array.from({length: n}, (_, i) => `學生 ${studentLabels(i)}`);
+    const rNames = Array.from({length: m}, (_, j) => `房間 ${roomLabels(j)}`);
     let html = '<table class="score-matrix"><thead><tr><th></th>';
-    jobNames.forEach(jn => html += `<th>${jn}</th>`);
+    rNames.forEach(rn => html += `<th>${rn}</th>`);
     html += '</tr></thead><tbody>';
     for (let i = 0; i < n; i++) {
-        html += `<tr><th class="row-header">${applicantNames[i]}</th>`;
+        html += `<tr><th class="row-header">${sNames[i]}</th>`;
         for (let j = 0; j < m; j++) {
             html += `<td id="cell-${i}-${j}"><input type="number" min="0" max="100" value="${scoreMatrix[i][j]}" data-i="${i}" data-j="${j}"></td>`;
         }
@@ -138,7 +141,6 @@ function solveBnB() {
     const sz = Math.min(n, m);
     let bestScore = -1, bestAssign = null, nodesExplored = 0, pruneCount = 0;
 
-    // Upper bound: for each unassigned person, take the max score among remaining jobs
     function upperBound(person, usedJobs) {
         let ub = 0;
         for (let p = person; p < sz; p++) {
@@ -172,14 +174,7 @@ function solveBnB() {
     search(0, 0, new Array(sz), new Set());
     const elapsed = performance.now() - t0;
 
-    return {
-        algo: '分支定界法 (B&B)',
-        score: bestScore,
-        assignment: bestAssign,
-        nodesExplored,
-        pruneCount,
-        time: elapsed
-    };
+    return { algo: '分支定界法 (B&B)', score: bestScore, assignment: bestAssign, nodesExplored, pruneCount, time: elapsed };
 }
 
 // =====================================================
@@ -209,14 +204,7 @@ function solveGreedy() {
     }
     const elapsed = performance.now() - t0;
 
-    return {
-        algo: '貪婪演算法',
-        score: total,
-        assignment,
-        nodesExplored: steps,
-        pruneCount: 0,
-        time: elapsed
-    };
+    return { algo: '貪婪演算法', score: total, assignment, nodesExplored: steps, pruneCount: 0, time: elapsed };
 }
 
 // =====================================================
@@ -227,7 +215,6 @@ function solveDP() {
     const sz = Math.min(n, m);
     if (sz > 20) { alert('DP 最多支援 20 人！'); return null; }
     const full = (1 << m) - 1;
-    // dp[mask] = max score using jobs in mask for first popcount(mask) people
     const dp = new Array(full + 1).fill(-1);
     const parent = new Array(full + 1).fill(-1);
     dp[0] = 0;
@@ -250,7 +237,6 @@ function solveDP() {
         }
     }
 
-    // Find best final mask
     let bestMask = 0, bestScore = -1;
     for (let mask = 0; mask <= full; mask++) {
         if (popcount(mask) === sz && dp[mask] > bestScore) {
@@ -258,7 +244,6 @@ function solveDP() {
         }
     }
 
-    // Reconstruct assignment
     const assignment = new Array(sz).fill(-1);
     let cur = bestMask;
     for (let p = sz - 1; p >= 0; p--) {
@@ -269,14 +254,7 @@ function solveDP() {
     }
     const elapsed = performance.now() - t0;
 
-    return {
-        algo: '動態規劃 (DP)',
-        score: bestScore,
-        assignment,
-        nodesExplored,
-        pruneCount: 0,
-        time: elapsed
-    };
+    return { algo: '動態規劃 (DP)', score: bestScore, assignment, nodesExplored, pruneCount: 0, time: elapsed };
 }
 
 function popcount(x) { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
@@ -290,22 +268,18 @@ function findBlockingPairs(assignment) {
     for (let i = 0; i < sz; i++) {
         for (let j = 0; j < m; j++) {
             if (assignment[i] === j) continue;
-            // Would person i prefer job j over their current?
             if (scoreMatrix[i][j] > scoreMatrix[i][assignment[i]]) {
-                // Who currently has job j?
                 const currentHolder = assignment.findIndex(x => x === j);
                 if (currentHolder === -1) {
-                    blocking.push({ i, j, reason: `求職者 ${cl(i)} 更適合職缺 ${j+1}（分數 ${scoreMatrix[i][j]} > ${scoreMatrix[i][assignment[i]]}），且職缺 ${j+1} 目前無人` });
+                    blocking.push({ i, j, reason: `學生 ${studentLabels(i)} 更偏好房間 ${roomLabels(j)}（${scoreMatrix[i][j]} > ${scoreMatrix[i][assignment[i]]}），且房間 ${roomLabels(j)} 目前無人` });
                 } else if (scoreMatrix[i][j] > scoreMatrix[currentHolder][j]) {
-                    blocking.push({ i, j, reason: `求職者 ${cl(i)} 對職缺 ${j+1} 的分數 (${scoreMatrix[i][j]}) 高於目前持有者 ${cl(currentHolder)} (${scoreMatrix[currentHolder][j]})` });
+                    blocking.push({ i, j, reason: `學生 ${studentLabels(i)} 對房間 ${roomLabels(j)} 的偏好 (${scoreMatrix[i][j]}) 高於目前住戶 ${studentLabels(currentHolder)} (${scoreMatrix[currentHolder][j]})` });
                 }
             }
         }
     }
     return blocking;
 }
-
-function cl(i) { return String.fromCharCode(65 + i); }
 
 // =====================================================
 // UI Control
@@ -325,11 +299,8 @@ function runMatch() {
 
 function runCompare() {
     if (!n || !m || scoreMatrix.length === 0) { alert('請先生成或載入資料！'); return; }
-    const r1 = solveBnB();
-    const r2 = solveGreedy();
-    const r3 = solveDP();
+    const r1 = solveBnB(), r2 = solveGreedy(), r3 = solveDP();
     displayCompare(r1, r2, r3);
-    // Show the best one on canvas
     currentResult = r1;
     drawBipartite(r1.assignment);
 }
@@ -339,7 +310,6 @@ function clearResults() {
     compareSection.style.display = 'none';
     algoInfo.style.display = 'none';
     currentResult = null;
-    // Clear cell highlights
     document.querySelectorAll('.highlight-cell').forEach(c => c.classList.remove('highlight-cell'));
     drawBipartite();
 }
@@ -357,11 +327,10 @@ function displayResult(r) {
         if (j < 0) return;
         const d = document.createElement('div');
         d.className = 'match-item';
-        d.innerHTML = `<strong>求職者 ${cl(i)}</strong> → 職缺 ${j + 1}（適配分數：<strong>${scoreMatrix[i][j]}</strong>）`;
+        d.innerHTML = `<strong>學生 ${studentLabels(i)}</strong> → 房間 ${roomLabels(j)}（偏好分數：<strong>${scoreMatrix[i][j]}</strong>）`;
         details.appendChild(d);
     });
 
-    // Stability
     const blocking = findBlockingPairs(r.assignment);
     const stabilityEl = document.getElementById('resStability');
     const bpEl = document.getElementById('blockingPairs');
@@ -380,7 +349,6 @@ function displayResult(r) {
         });
     }
 
-    // Highlight matrix cells
     document.querySelectorAll('.highlight-cell').forEach(c => c.classList.remove('highlight-cell'));
     r.assignment.forEach((j, i) => {
         if (j < 0) return;
@@ -388,11 +356,9 @@ function displayResult(r) {
         if (cell) cell.classList.add('highlight-cell');
     });
 
-    // Algo info
     algoInfoTitle.textContent = r.algo + ' 執行資訊';
     algoInfoContent.innerHTML = '';
-    const infos = [`搜尋節點數：${r.nodesExplored}`, `修剪次數：${r.pruneCount}`, `最優分數：${r.score}`, `計算時間：${r.time.toFixed(2)} ms`];
-    infos.forEach((t, i) => {
+    [`搜尋節點數：${r.nodesExplored}`, `修剪次數：${r.pruneCount}`, `最優分數：${r.score}`, `計算時間：${r.time.toFixed(2)} ms`].forEach((t, i) => {
         const d = document.createElement('div');
         d.className = 'step-item' + (i === 2 ? ' highlight' : '');
         d.textContent = t;
@@ -407,7 +373,7 @@ function displayCompare(r1, r2, r3) {
     const body = document.getElementById('compareBody');
     const bestScore = Math.max(r1.score, r2.score, r3.score);
     const rows = [
-        ['總適配分數', r1.score, r2.score, r3.score],
+        ['總偏好分數', r1.score, r2.score, r3.score],
         ['搜尋節點數', r1.nodesExplored, r2.nodesExplored, r3.nodesExplored],
         ['修剪次數', r1.pruneCount, r2.pruneCount, r3.pruneCount],
         ['計算時間 (ms)', r1.time.toFixed(2), r2.time.toFixed(2), r3.time.toFixed(2)],
@@ -416,19 +382,16 @@ function displayCompare(r1, r2, r3) {
     body.innerHTML = '';
     rows.forEach(row => {
         const tr = document.createElement('tr');
-        if (row[0] === '總適配分數') tr.className = 'best-row';
+        if (row[0] === '總偏好分數') tr.className = 'best-row';
         row.forEach(cell => { const td = document.createElement('td'); td.textContent = cell; tr.appendChild(td); });
         body.appendChild(tr);
     });
-
-    // Blocking pair comparison
     const bp1 = findBlockingPairs(r1.assignment).length;
     const bp2 = findBlockingPairs(r2.assignment).length;
     const bp3 = findBlockingPairs(r3.assignment).length;
     const bpRow = document.createElement('tr');
     ['Blocking pairs', bp1, bp2, bp3].forEach(c => { const td = document.createElement('td'); td.textContent = c; bpRow.appendChild(td); });
     body.appendChild(bpRow);
-
     resultSection.style.display = 'none';
     compareSection.style.display = 'block';
     algoInfo.style.display = 'none';
@@ -448,25 +411,23 @@ function drawBipartite(assignment) {
     const topY = 50;
 
     const leftX = cw * 0.22, rightX = cw * 0.65;
-    const applicantSpacing = Math.min(60, (drawH - 40) / n);
-    const jobSpacing = Math.min(60, (drawH - 40) / m);
-    const aStartY = topY + (drawH - (n - 1) * applicantSpacing) / 2;
-    const jStartY = topY + (drawH - (m - 1) * jobSpacing) / 2;
+    const aSpacing = Math.min(60, (drawH - 40) / n);
+    const jSpacing = Math.min(60, (drawH - 40) / m);
+    const aStartY = topY + (drawH - (n - 1) * aSpacing) / 2;
+    const jStartY = topY + (drawH - (m - 1) * jSpacing) / 2;
 
-    const aPositions = [], jPositions = [];
-    for (let i = 0; i < n; i++) aPositions.push({ x: leftX, y: aStartY + i * applicantSpacing });
-    for (let j = 0; j < m; j++) jPositions.push({ x: rightX, y: jStartY + j * jobSpacing });
+    const aPos = [], jPos = [];
+    for (let i = 0; i < n; i++) aPos.push({ x: leftX, y: aStartY + i * aSpacing });
+    for (let j = 0; j < m; j++) jPos.push({ x: rightX, y: jStartY + j * jSpacing });
 
-    // Labels
     ctx.font = 'bold 13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillStyle = '#4f46e5'; ctx.fillText('求職者', leftX, topY - 10);
-    ctx.fillStyle = '#ea580c'; ctx.fillText('職缺', rightX, topY - 10);
+    ctx.fillStyle = '#4f46e5'; ctx.fillText('學生', leftX, topY - 10);
+    ctx.fillStyle = '#ea580c'; ctx.fillText('房間', rightX, topY - 10);
 
-    // Draw match lines
     if (assignment) {
         assignment.forEach((j, i) => {
-            if (j < 0 || i >= aPositions.length || j >= jPositions.length) return;
-            const ap = aPositions[i], jp = jPositions[j];
+            if (j < 0 || i >= aPos.length || j >= jPos.length) return;
+            const ap = aPos[i], jp = jPos[j];
             ctx.beginPath(); ctx.moveTo(ap.x + 22, ap.y); ctx.lineTo(jp.x - 22, jp.y);
             ctx.strokeStyle = '#059669'; ctx.lineWidth = 2.5; ctx.stroke();
             const mx = (ap.x + jp.x) / 2, my = (ap.y + jp.y) / 2;
@@ -477,32 +438,29 @@ function drawBipartite(assignment) {
         });
     }
 
-    // Applicant nodes
-    aPositions.forEach((pos, i) => {
+    aPos.forEach((pos, i) => {
         const matched = assignment && assignment[i] >= 0;
         ctx.beginPath(); ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
         ctx.fillStyle = matched ? '#4f46e5' : '#94a3b8'; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = matched ? '#6366f1' : '#cbd5e1'; ctx.stroke();
         ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(cl(i), pos.x, pos.y);
+        ctx.fillText(studentLabels(i), pos.x, pos.y);
     });
 
-    // Job nodes
-    jPositions.forEach((pos, j) => {
+    jPos.forEach((pos, j) => {
         const matched = assignment && assignment.includes(j);
         ctx.beginPath();
-        roundRect(ctx, pos.x - 20, pos.y - 16, 40, 32, 6);
+        roundRect(ctx, pos.x - 22, pos.y - 16, 44, 32, 6);
         ctx.fillStyle = matched ? '#ea580c' : '#94a3b8'; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = matched ? '#f97316' : '#cbd5e1'; ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(j + 1, pos.x, pos.y);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(roomLabels(j), pos.x, pos.y);
     });
 }
 
 function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
     ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
     ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
     ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);

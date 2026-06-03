@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>求職媒合最佳配對系統</title>
-    <meta name="description" content="人員指派問題求職媒合最佳配對資訊系統">
+    <title>學生宿舍最佳配對系統</title>
+    <meta name="description" content="人員指派問題 — 學生宿舍最佳配對資訊系統">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -20,10 +20,10 @@
                 <span class="canvas-subtitle" id="canvasSubtitle">建立資料後將在此顯示二部圖配對結果</span>
             </div>
 
-            <!-- 適配分數矩陣 -->
+            <!-- 偏好分數矩陣 -->
             <div class="matrix-panel" id="matrixPanel">
                 <div class="matrix-header">
-                    <h3>📊 適配分數矩陣</h3>
+                    <h3>📊 偏好分數矩陣</h3>
                     <span class="matrix-hint">點擊儲存格可直接編輯分數 (0-100)</span>
                 </div>
                 <div class="matrix-wrapper" id="matrixWrapper"></div>
@@ -40,10 +40,10 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <h1>求職媒合系統</h1>
+                    <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <h1>宿舍配對系統</h1>
                 </div>
-                <p class="subtitle">人員指派最佳配對資訊系統</p>
+                <p class="subtitle">學生宿舍最佳配對資訊系統</p>
             </div>
 
             <!-- 資料設定 -->
@@ -51,11 +51,11 @@
                 <h2>📊 資料設定</h2>
                 <div class="input-row">
                     <div class="input-group">
-                        <label for="applicantCount">求職者人數 (n)</label>
+                        <label for="applicantCount">學生人數 (n)</label>
                         <input type="number" id="applicantCount" class="text-input" min="2" max="10" value="4">
                     </div>
                     <div class="input-group">
-                        <label for="jobCount">職缺數量 (m)</label>
+                        <label for="jobCount">房間數量 (m)</label>
                         <input type="number" id="jobCount" class="text-input" min="2" max="10" value="4">
                     </div>
                 </div>
@@ -65,8 +65,8 @@
                     <button class="action-btn" id="btnExample2">📄 範例2 (5×5)</button>
                 </div>
                 <div class="map-stats">
-                    <div class="stat-chip"><span class="stat-chip-label">求職者</span><span class="stat-chip-value" id="statApplicants">0</span></div>
-                    <div class="stat-chip"><span class="stat-chip-label">職缺</span><span class="stat-chip-value" id="statJobs">0</span></div>
+                    <div class="stat-chip"><span class="stat-chip-label">學生</span><span class="stat-chip-value" id="statApplicants">0</span></div>
+                    <div class="stat-chip"><span class="stat-chip-label">房間</span><span class="stat-chip-value" id="statJobs">0</span></div>
                 </div>
             </div>
 
@@ -92,7 +92,7 @@
                 <h2>📋 配對結果</h2>
                 <div class="result-card">
                     <div class="result-stat"><span class="stat-label">使用演算法：</span><span class="stat-value-small" id="resAlgo">-</span></div>
-                    <div class="result-stat"><span class="stat-label">總適配分數：</span><span class="stat-value" id="resTotalScore">-</span></div>
+                    <div class="result-stat"><span class="stat-label">總偏好分數：</span><span class="stat-value" id="resTotalScore">-</span></div>
                     <div class="result-stat"><span class="stat-label">搜尋節點數：</span><span class="stat-value-small" id="resNodes">-</span></div>
                     <div class="result-stat"><span class="stat-label">修剪次數：</span><span class="stat-value-small" id="resPrune">-</span></div>
                     <div class="result-stat"><span class="stat-label">計算時間：</span><span class="stat-value-small" id="resTime">-</span></div>
