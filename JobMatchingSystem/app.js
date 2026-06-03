@@ -73,7 +73,11 @@ function generateStudents(count) {
     students = [];
     const typeOpts = ['2', '3', '4', 'any'];
     for (let i = 0; i < count; i++) {
-        students.push({ id: i, name: SL(i), prefType: typeOpts[Math.floor(Math.random() * 4)] });
+        // 隨機產生三個志願，這裡簡單處理
+        const p1 = typeOpts[Math.floor(Math.random() * 4)];
+        const p2 = typeOpts[Math.floor(Math.random() * 4)];
+        const p3 = typeOpts[Math.floor(Math.random() * 4)];
+        students.push({ id: i, name: SL(i), prefTypes: [p1, p2, p3] });
     }
 }
 
@@ -83,10 +87,10 @@ function loadExample1() {
         { id: 1, number: 102, type: 2 }
     ];
     students = [
-        { id: 0, name: 'A', prefType: '2' },
-        { id: 1, name: 'B', prefType: '2' },
-        { id: 2, name: 'C', prefType: 'any' },
-        { id: 3, name: 'D', prefType: '2' }
+        { id: 0, name: 'A', prefTypes: ['2', '3', '4'] },
+        { id: 1, name: 'B', prefTypes: ['2', 'any', '3'] },
+        { id: 2, name: 'C', prefTypes: ['any', '2', '3'] },
+        { id: 3, name: 'D', prefTypes: ['2', '4', '3'] }
     ];
     expandBeds();
     $('numStudents').value = students.length;
@@ -100,11 +104,11 @@ function loadExample2() {
         { id: 1, number: 202, type: 3 }
     ];
     students = [
-        { id: 0, name: 'A', prefType: '2' },
-        { id: 1, name: 'B', prefType: '3' },
-        { id: 2, name: 'C', prefType: '2' },
-        { id: 3, name: 'D', prefType: 'any' },
-        { id: 4, name: 'E', prefType: '3' }
+        { id: 0, name: 'A', prefTypes: ['2', '3', '4'] },
+        { id: 1, name: 'B', prefTypes: ['3', '2', 'any'] },
+        { id: 2, name: 'C', prefTypes: ['2', 'any', '3'] },
+        { id: 3, name: 'D', prefTypes: ['any', '2', '3'] },
+        { id: 4, name: 'E', prefTypes: ['3', '4', '2'] }
     ];
     expandBeds();
     $('numStudents').value = students.length;
@@ -123,12 +127,18 @@ function expandBeds() {
 
 // ========== Score ==========
 function calcScore(student, slot) {
-    const seed = (student.id * 31 + slot.slotIdx * 17 + 7) % 30 + 20;
+    const seed = (student.id * 31 + slot.slotIdx * 17 + 7) % 30 + 10; // 基礎分 10-39
     let typeBonus = 0;
-    if (student.prefType === 'any') typeBonus = 30;
-    else if (parseInt(student.prefType) === slot.type) typeBonus = 50;
-    else if (Math.abs(parseInt(student.prefType) - slot.type) === 1) typeBonus = 20;
-    else typeBonus = 5;
+    
+    const c1 = student.prefTypes[0];
+    const c2 = student.prefTypes[1];
+    const c3 = student.prefTypes[2];
+    
+    if (c1 === 'any' || parseInt(c1) === slot.type) typeBonus = 60;      // 志願一命中 +60
+    else if (c2 === 'any' || parseInt(c2) === slot.type) typeBonus = 40; // 志願二命中 +40
+    else if (c3 === 'any' || parseInt(c3) === slot.type) typeBonus = 20; // 志願三命中 +20
+    else typeBonus = 0;
+    
     return Math.min(100, seed + typeBonus);
 }
 
@@ -173,16 +183,40 @@ function renderStudents() {
         const card = document.createElement('div'); card.className = 'student-card';
         card.innerHTML = `
             <span class="student-name">${s.name}</span>
-            <label>偏好房型</label>
-            <select data-si="${i}">
-                <option value="2" ${s.prefType==='2'?'selected':''}>雙人房</option>
-                <option value="3" ${s.prefType==='3'?'selected':''}>三人房</option>
-                <option value="4" ${s.prefType==='4'?'selected':''}>四人房</option>
-                <option value="any" ${s.prefType==='any'?'selected':''}>不限</option>
-            </select>`;
-        card.querySelector('select').addEventListener('change', e => {
-            students[parseInt(e.target.dataset.si)].prefType = e.target.value;
-            buildScoreMatrix(); renderMatrix();
+            <div class="pref-col">
+                <label>志願一</label>
+                <select data-si="${i}" data-rank="0">
+                    <option value="2" ${s.prefTypes[0]==='2'?'selected':''}>雙人</option>
+                    <option value="3" ${s.prefTypes[0]==='3'?'selected':''}>三人</option>
+                    <option value="4" ${s.prefTypes[0]==='4'?'selected':''}>四人</option>
+                    <option value="any" ${s.prefTypes[0]==='any'?'selected':''}>不限</option>
+                </select>
+            </div>
+            <div class="pref-col">
+                <label>志願二</label>
+                <select data-si="${i}" data-rank="1">
+                    <option value="2" ${s.prefTypes[1]==='2'?'selected':''}>雙人</option>
+                    <option value="3" ${s.prefTypes[1]==='3'?'selected':''}>三人</option>
+                    <option value="4" ${s.prefTypes[1]==='4'?'selected':''}>四人</option>
+                    <option value="any" ${s.prefTypes[1]==='any'?'selected':''}>不限</option>
+                </select>
+            </div>
+            <div class="pref-col">
+                <label>志願三</label>
+                <select data-si="${i}" data-rank="2">
+                    <option value="2" ${s.prefTypes[2]==='2'?'selected':''}>雙人</option>
+                    <option value="3" ${s.prefTypes[2]==='3'?'selected':''}>三人</option>
+                    <option value="4" ${s.prefTypes[2]==='4'?'selected':''}>四人</option>
+                    <option value="any" ${s.prefTypes[2]==='any'?'selected':''}>不限</option>
+                </select>
+            </div>`;
+        card.querySelectorAll('select').forEach(sel => {
+            sel.addEventListener('change', e => {
+                const si = parseInt(e.target.dataset.si);
+                const rank = parseInt(e.target.dataset.rank);
+                students[si].prefTypes[rank] = e.target.value;
+                buildScoreMatrix(); renderMatrix();
+            });
         });
         list.appendChild(card);
     });

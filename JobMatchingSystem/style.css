@@ -93,11 +93,12 @@ table.score-matrix td.highlight-cell { background: var(--green-light); font-weig
 
 /* Student List */
 .student-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
-.student-card { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.72rem; }
-.student-card .student-name { font-weight: 700; color: var(--amber); min-width: 32px; }
-.student-card select { font-size: 0.7rem; padding: 2px 3px; border: 1px solid var(--border-color); border-radius: 3px; background: white; max-width: 68px; }
-.student-card label { color: var(--text-muted); font-size: 0.68rem; margin-right: 1px; }
-.section-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: -4px; }
+.student-card { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.72rem; }
+.student-card .student-name { font-weight: 700; color: var(--amber); min-width: 24px; }
+.pref-col { display: flex; flex-direction: column; gap: 2px; }
+.pref-col select { font-size: 0.7rem; padding: 2px 3px; border: 1px solid var(--border-color); border-radius: 3px; background: white; width: 50px; }
+.pref-col label { color: var(--text-muted); font-size: 0.65rem; }
+.section-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: -4px; margin-bottom: 2px; }
 table.score-matrix td input { width: 42px; text-align: center; border: 1px solid transparent; background: transparent; font-size: 0.78rem; font-family: var(--font); padding: 2px; border-radius: 3px; outline: none; }
 table.score-matrix td input:hover { border-color: var(--border-color); }
 table.score-matrix td input:focus { border-color: var(--accent); background: white; }
