@@ -1,7 +1,7 @@
 // =====================================================
-// 學生宿舍最佳配對系統（精簡版 v2）
+// 學生宿舍最佳配對系統（精簡版 v3）
 // 修正：學生數可自訂、B&B 加時間上限、效能優化
-// 演算法：分支定界法 / 貪婪法 / 動態規劃
+// 演算法：分支定界法 (Branch-and-Bound)
 // =====================================================
 
 let rooms = [];
@@ -27,7 +27,7 @@ function init() {
     $('btnExample2').addEventListener('click', loadExample2);
     $('btnRegenStudents').addEventListener('click', regenStudents);
     $('btnMatch').addEventListener('click', runMatch);
-    $('btnCompare').addEventListener('click', runCompare);
+    // $('btnCompare').addEventListener('click', runCompare);  // 已移除比較功能
     $('btnClear').addEventListener('click', clearResults);
 }
 
@@ -345,44 +345,44 @@ function solveGreedyInternal() {
     return { score: total, assignment: asgn, nodesExplored: steps };
 }
 
-function solveGreedy() {
-    readScoresFromUI();
-    const t0 = performance.now();
-    const r = solveGreedyInternal();
-    return { algo: '貪婪演算法', score: r.score, assignment: r.assignment, nodesExplored: r.nodesExplored, pruneCount: 0, time: performance.now() - t0 };
-}
+// ========== [已註解] 貪婪演算法 (Greedy) ==========
+// function solveGreedy() {
+//     readScoresFromUI();
+//     const t0 = performance.now();
+//     const r = solveGreedyInternal();
+//     return { algo: '貪婪演算法', score: r.score, assignment: r.assignment, nodesExplored: r.nodesExplored, pruneCount: 0, time: performance.now() - t0 };
+// }
 
-// ========== Algorithm 3: DP ==========
-function solveDP() {
-    readScoresFromUI();
-    const n = students.length, m = bedSlots.length, sz = Math.min(n, m);
-    if (m > 20) { alert('DP 最多支援 20 個床位！'); return null; }
-    const full = (1 << m) - 1;
-    const dp = new Float64Array(full + 1).fill(-1);
-    const par = new Int32Array(full + 1).fill(-1);
-    dp[0] = 0;
-    let ne = 0;
-    const t0 = performance.now();
-    for (let mask = 0; mask <= full; mask++) {
-        if (dp[mask] < 0) continue;
-        const person = popcount(mask);
-        if (person >= sz) continue;
-        for (let j = 0; j < m; j++) {
-            if (mask & (1 << j)) continue;
-            ne++;
-            const nm = mask | (1 << j), ns = dp[mask] + scoreMatrix[person][j];
-            if (ns > dp[nm]) { dp[nm] = ns; par[nm] = mask; }
-        }
-    }
-    let bm = 0, bs = -1;
-    for (let mask = 0; mask <= full; mask++) if (popcount(mask) === sz && dp[mask] > bs) { bs = dp[mask]; bm = mask; }
-    const asgn = new Array(sz).fill(-1);
-    let cur = bm;
-    for (let p = sz - 1; p >= 0; p--) { const prev = par[cur]; asgn[p] = Math.log2(cur ^ prev); cur = prev; }
-    return { algo: '動態規劃 (DP)', score: bs, assignment: asgn, nodesExplored: ne, pruneCount: 0, time: performance.now() - t0 };
-}
-
-function popcount(x) { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
+// ========== [已註解] 動態規劃法 (DP) ==========
+// function solveDP() {
+//     readScoresFromUI();
+//     const n = students.length, m = bedSlots.length, sz = Math.min(n, m);
+//     if (m > 20) { alert('DP 最多支援 20 個床位！'); return null; }
+//     const full = (1 << m) - 1;
+//     const dp = new Float64Array(full + 1).fill(-1);
+//     const par = new Int32Array(full + 1).fill(-1);
+//     dp[0] = 0;
+//     let ne = 0;
+//     const t0 = performance.now();
+//     for (let mask = 0; mask <= full; mask++) {
+//         if (dp[mask] < 0) continue;
+//         const person = popcount(mask);
+//         if (person >= sz) continue;
+//         for (let j = 0; j < m; j++) {
+//             if (mask & (1 << j)) continue;
+//             ne++;
+//             const nm = mask | (1 << j), ns = dp[mask] + scoreMatrix[person][j];
+//             if (ns > dp[nm]) { dp[nm] = ns; par[nm] = mask; }
+//         }
+//     }
+//     let bm = 0, bs = -1;
+//     for (let mask = 0; mask <= full; mask++) if (popcount(mask) === sz && dp[mask] > bs) { bs = dp[mask]; bm = mask; }
+//     const asgn = new Array(sz).fill(-1);
+//     let cur = bm;
+//     for (let p = sz - 1; p >= 0; p--) { const prev = par[cur]; asgn[p] = Math.log2(cur ^ prev); cur = prev; }
+//     return { algo: '動態規劃 (DP)', score: bs, assignment: asgn, nodesExplored: ne, pruneCount: 0, time: performance.now() - t0 };
+// }
+// function popcount(x) { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
 
 // ========== Blocking Pairs ==========
 function findBlockingPairs(asgn) {
@@ -405,21 +405,18 @@ function findBlockingPairs(asgn) {
 // ========== UI Controls ==========
 function runMatch() {
     if (!scoreMatrix.length) { alert('請先生成資料！'); return; }
-    const a = document.querySelector('input[name="algo"]:checked').value;
-    let r;
-    if (a === 'bnb') r = solveBnB();
-    else if (a === 'greedy') r = solveGreedy();
-    else r = solveDP();
+    const r = solveBnB();
     if (!r) return;
     currentResult = r; displayResult(r); drawBipartite(r.assignment);
 }
 
-function runCompare() {
-    if (!scoreMatrix.length) { alert('請先生成資料！'); return; }
-    const r1 = solveBnB(), r2 = solveGreedy(), r3 = solveDP();
-    displayCompare(r1, r2, r3);
-    currentResult = r1; drawBipartite(r1.assignment);
-}
+// ========== [已註解] 三算法比較 ==========
+// function runCompare() {
+//     if (!scoreMatrix.length) { alert('請先生成資料！'); return; }
+//     const r1 = solveBnB(), r2 = solveGreedy(), r3 = solveDP();
+//     displayCompare(r1, r2, r3);
+//     currentResult = r1; drawBipartite(r1.assignment);
+// }
 
 function clearResults() {
     $('resultSection').style.display = 'none';
@@ -476,27 +473,28 @@ function displayResult(r) {
     $('algoInfo').style.display = 'block'; $('resultSection').style.display = 'block'; $('compareSection').style.display = 'none';
 }
 
-function displayCompare(r1, r2, r3) {
-    const body = $('compareBody'), best = Math.max(r1.score, r2.score, r3.score);
-    body.innerHTML = '';
-    const label1 = r1.timedOut ? r1.score + ' ⏱️' : r1.score;
-    [['總偏好分數', label1, r2.score, r3.score],
-     ['搜尋節點', r1.nodesExplored, r2.nodesExplored, r3.nodesExplored],
-     ['修剪次數', r1.pruneCount, r2.pruneCount, r3.pruneCount],
-     ['時間(ms)', r1.time.toFixed(2), r2.time.toFixed(2), r3.time.toFixed(2)],
-     ['最優?', r1.score === best ? (r1.timedOut ? '⏱️' : '✅') : '❌', r2.score === best ? '✅' : '❌', r3.score === best ? '✅' : '❌']
-    ].forEach(row => {
-        const tr = document.createElement('tr');
-        if (row[0] === '總偏好分數') tr.className = 'best-row';
-        row.forEach(c => { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
-        body.appendChild(tr);
-    });
-    const b1 = findBlockingPairs(r1.assignment).length, b2 = findBlockingPairs(r2.assignment).length, b3 = findBlockingPairs(r3.assignment).length;
-    const bpr = document.createElement('tr');
-    ['Blocking pairs', b1, b2, b3].forEach(c => { const td = document.createElement('td'); td.textContent = c; bpr.appendChild(td); });
-    body.appendChild(bpr);
-    $('resultSection').style.display = 'none'; $('compareSection').style.display = 'block'; $('algoInfo').style.display = 'none';
-}
+// ========== [已註解] displayCompare ==========
+// function displayCompare(r1, r2, r3) {
+//     const body = $('compareBody'), best = Math.max(r1.score, r2.score, r3.score);
+//     body.innerHTML = '';
+//     const label1 = r1.timedOut ? r1.score + ' ⏱️' : r1.score;
+//     [['總偏好分數', label1, r2.score, r3.score],
+//      ['搜尋節點', r1.nodesExplored, r2.nodesExplored, r3.nodesExplored],
+//      ['修剪次數', r1.pruneCount, r2.pruneCount, r3.pruneCount],
+//      ['時間(ms)', r1.time.toFixed(2), r2.time.toFixed(2), r3.time.toFixed(2)],
+//      ['最優?', r1.score === best ? (r1.timedOut ? '⏱️' : '✅') : '❌', r2.score === best ? '✅' : '❌', r3.score === best ? '✅' : '❌']
+//     ].forEach(row => {
+//         const tr = document.createElement('tr');
+//         if (row[0] === '總偏好分數') tr.className = 'best-row';
+//         row.forEach(c => { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
+//         body.appendChild(tr);
+//     });
+//     const b1 = findBlockingPairs(r1.assignment).length, b2 = findBlockingPairs(r2.assignment).length, b3 = findBlockingPairs(r3.assignment).length;
+//     const bpr = document.createElement('tr');
+//     ['Blocking pairs', b1, b2, b3].forEach(c => { const td = document.createElement('td'); td.textContent = c; bpr.appendChild(td); });
+//     body.appendChild(bpr);
+//     $('resultSection').style.display = 'none'; $('compareSection').style.display = 'block'; $('algoInfo').style.display = 'none';
+// }
 
 // ========== Canvas ==========
 function drawBipartite(assignment) {
